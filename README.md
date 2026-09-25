@@ -21,5 +21,5 @@ AI-powered Football Manager assistant.
 
 3. Run the server:
 ```bash
-   python3 -m uvicorn app.main:app --reload
+   python -m uvicorn app.main:app --reload
 ```

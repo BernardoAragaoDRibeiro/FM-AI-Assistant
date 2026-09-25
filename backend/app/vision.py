@@ -89,6 +89,7 @@ Rules:
 - For any numeric attribute, if the value shown is a range (e.g. "12-16"), store it as a string exactly as shown (e.g. "12-16"). If the value is a dash ("-") or empty, use null. Never invent or estimate attribute values.
 - Attribute values range from 1 to 20 in Football Manager. Use integers for known values, strings for ranges (e.g. "12-16"), and 0 for any attribute that is not visible, is a dash ("-"), or has no data. Never invent or estimate attribute values.
 - For "current_ability" and "potential_ability", use null if not visible or scouting is incomplete.
+- In the top-right area of the screen, the layout is always: first line is transfer value (or "Not for Sale" or "Unknown"), second line is "€[wage] p/w [contract end date]". Never confuse these two lines. The wage always has "p/w" after it. The contract date is always at the end of the second line in format DD/MM/YYYY.
 """
 
 

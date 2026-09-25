@@ -3,6 +3,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.vision import extract_players_from_screenshot
 from app import storage
+from app.analysis import analyze
 
 app = FastAPI()
 
@@ -67,3 +68,11 @@ def get_tactic():
 def save_tactic(tactic: dict):
     storage.save_tactic(tactic)
     return {"status": "saved"}
+
+@app.post("/analyze")
+async def analyze_endpoint(body: dict):
+    question = body.get("question", "")
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required")
+    result = analyze(question)
+    return {"answer": result}
