@@ -235,4 +235,5 @@ Thumbs.db
 # Save data
 backend/data/squad.json
 backend/data/targets.json
+backend/data/tactic.json
 backend/data/tactics.json

@@ -64,6 +64,18 @@ def clear_squad():
     storage.clear_squad()
     return {"status": "cleared"}
 
+@app.delete("/squad/player")
+def delete_player(body: dict):
+    name = body.get("name")
+    target = body.get("target", False)
+    if not name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    filename = "targets.json" if target else "squad.json"
+    data = storage._read(filename)
+    data["players"] = [p for p in data["players"] if p["name"] != name]
+    storage._write(filename, data)
+    return {"status": "deleted"}
+
 
 @app.get("/targets")
 def get_targets():
