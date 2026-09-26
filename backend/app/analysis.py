@@ -86,11 +86,15 @@ def build_context(question: str) -> str:
 
 
 def analyze(question: str) -> str:
+    config = storage.get_config()
+    model = config.get("analysis_model", "groq/qwen/qwen3.8-27b")
+    api_key = config.get("analysis_api_key") or None
+
     context = build_context(question)
 
     response = completion(
-        model=ANALYSIS_MODEL,
-        api_key=ANALYSIS_API_KEY,
+        model=model,
+        api_key=api_key,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": context},

@@ -14,6 +14,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/config")
+def get_config():
+    config = storage.get_config()
+    # nunca retorna as chaves completas, só se estão preenchidas
+    safe = {**config}
+    for key in ["vision_api_key", "analysis_api_key"]:
+        safe[key] = "***" if config.get(key) else ""
+    return safe
+
+
+@app.post("/config")
+def save_config(body: dict):
+    current = storage.get_config()
+    # preserva chaves existentes se vier "***" (não foi alterada)
+    for key in ["vision_api_key", "analysis_api_key"]:
+        if body.get(key) == "***" or body.get(key) is None:
+            body[key] = current.get(key, "")
+    storage.save_config(body)
+    return {"status": "saved"}
 
 @app.get("/health")
 def health():

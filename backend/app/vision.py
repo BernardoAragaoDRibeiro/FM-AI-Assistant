@@ -2,6 +2,7 @@ import base64
 import os
 from litellm import completion
 from dotenv import load_dotenv
+from app import storage
 
 load_dotenv()
 
@@ -87,11 +88,15 @@ Rules:
 
 
 def extract_players_from_screenshot(image_bytes: bytes) -> str:
+    config = storage.get_config()
+    model = config.get("vision_model", "groq/qwen/qwen3.8-27b")
+    api_key = config.get("vision_api_key") or None
+
     image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
     response = completion(
-        model=VISION_MODEL,
-        api_key=VISION_API_KEY,
+        model=model,
+        api_key=api_key,
         messages=[
             {
                 "role": "user",
@@ -111,5 +116,7 @@ def extract_players_from_screenshot(image_bytes: bytes) -> str:
         ],
         max_tokens=800,
     )
+
+    return response.choices[0].message.content
 
     return response.choices[0].message.content

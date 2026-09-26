@@ -4,6 +4,29 @@ from datetime import datetime
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
+CONFIG_DEFAULTS = {
+    "vision_model": "groq/qwen/qwen3.8-27b",
+    "vision_api_key": "",
+    "analysis_model": "groq/qwen/qwen3.8-27b",
+    "analysis_api_key": "",
+}
+
+
+def get_config() -> dict:
+    path = DATA_DIR / "config.json"
+    if not path.exists():
+        return CONFIG_DEFAULTS.copy()
+    try:
+        with open(path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+        return {**CONFIG_DEFAULTS, **data}
+    except Exception:
+        return CONFIG_DEFAULTS.copy()
+
+
+def save_config(config: dict) -> None:
+    _write("config.json", {k: v for k, v in config.items() if k in CONFIG_DEFAULTS})
+
 
 def _read(filename: str) -> dict:
     path = DATA_DIR / filename

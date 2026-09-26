@@ -4,6 +4,7 @@ import Scan from "./pages/Scan.jsx";
 import Targets from "./pages/Targets.jsx";
 import Tactic from "./pages/Tactic.jsx";
 import Analyze from "./pages/Analyze.jsx";
+import Settings from "./pages/Settings.jsx"
 
 const nav = [
   { to: "/", label: "Squad" },
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/targets" element={<Targets />} />
           <Route path="/tactic" element={<Tactic />} />
           <Route path="/analyze" element={<Analyze />} />
+          <Route path="/settings" element={<Settings/>} />
         </Routes>
       </main>
     </div>

@@ -232,4 +232,7 @@ frontend/.next/
 .DS_Store
 Thumbs.db
 
-backend/data/
+# Save data
+backend/data/squad.json
+backend/data/targets.json
+backend/data/tactics.json
