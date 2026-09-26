@@ -12,6 +12,7 @@ const nav = [
   { to: "/targets", label: "Targets" },
   { to: "/tactic", label: "Tactic" },
   { to: "/analyze", label: "Analyze" },
+  { to: "/settings", label: "Settings" },
 ];
 
 export default function App() {
