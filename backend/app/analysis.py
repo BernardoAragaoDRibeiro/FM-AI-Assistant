@@ -1,13 +1,12 @@
 import os
-from groq import Groq
+from litellm import completion
 from dotenv import load_dotenv
 from app import storage
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-ANALYSIS_MODEL = os.getenv("ANALYSIS_MODEL", "qwen/qwen3.8-27b")
+ANALYSIS_MODEL = os.getenv("ANALYSIS_MODEL", "groq/qwen/qwen3.8-27b")
+ANALYSIS_API_KEY = os.getenv("ANALYSIS_API_KEY") or os.getenv("GROQ_API_KEY")
 
 SYSTEM_PROMPT = """You are a technical director assistant for a Football Manager save.
 
@@ -89,8 +88,9 @@ def build_context(question: str) -> str:
 def analyze(question: str) -> str:
     context = build_context(question)
 
-    response = client.chat.completions.create(
+    response = completion(
         model=ANALYSIS_MODEL,
+        api_key=ANALYSIS_API_KEY,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": context},

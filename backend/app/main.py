@@ -21,7 +21,7 @@ def health():
 
 
 @app.post("/scan")
-async def scan_screenshot(file: UploadFile = File(...), target: bool = False):
+async def scan_screenshot(file: UploadFile = File(...)):
     image_bytes = await file.read()
     raw = extract_players_from_screenshot(image_bytes)
 
@@ -31,10 +31,8 @@ async def scan_screenshot(file: UploadFile = File(...), target: bool = False):
     except Exception:
         raise HTTPException(status_code=422, detail="Could not parse player data from screenshot")
 
-    for player in data.get("players", []):
-        storage.add_player(player, target=target)
-
-    return {"saved": len(data.get("players", [])), "players": data.get("players", [])}
+    players = data.get("players", [])
+    return {"players": players}
 
 
 @app.get("/squad")
@@ -76,3 +74,12 @@ async def analyze_endpoint(body: dict):
         raise HTTPException(status_code=400, detail="Question is required")
     result = analyze(question)
     return {"answer": result}
+
+@app.post("/squad/player")
+def save_player(body: dict):
+    player = body.get("player")
+    target = body.get("target", False)
+    if not player:
+        raise HTTPException(status_code=400, detail="Player data is required")
+    storage.add_player(player, target=target)
+    return {"status": "saved"}

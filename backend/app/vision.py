@@ -1,13 +1,12 @@
 import base64
 import os
-from groq import Groq
+from litellm import completion
 from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-VISION_MODEL = os.getenv("VISION_MODEL", "qwen/qwen3.8-27b")
+VISION_MODEL = os.getenv("VISION_MODEL", "groq/qwen/qwen3.8-27b")
+VISION_API_KEY = os.getenv("VISION_API_KEY") or os.getenv("GROQ_API_KEY")
 
 PLAYER_SCHEMA = '''
 {
@@ -21,8 +20,8 @@ PLAYER_SCHEMA = '''
       "height": "",
       "personality": "",
       "traits": [],
-      "current_ability": 0,
-      "potential_ability": 0,
+      "current_ability": null,
+      "potential_ability": null,
       "contract": { "wage": "", "expires": "", "value": "" },
       "mental": {
         "aggression": 0, "anticipation": 0, "bravery": 0,
@@ -58,6 +57,8 @@ PLAYER_SCHEMA = '''
 }
 '''
 
+TRAITS_LIST = "Gets Forward Whenever Possible, Stays Back At All Times, Comes Deep To Get Ball, Dribbles Down Left Flank, Dribbles Down Right Flank, Dribbles Through Center, Runs With Ball More Often, Runs With Ball Rarely, Hugs Touchline, Cuts Inside From Left, Cuts Inside From Right, Cuts Inside From Both Wings, Gets Into Opposition Area, Arrives Late In Opposition Area, Tries To Beat Offside Trap, Plays With Back To Goal, Does Not Move Into Channels, Moves Into Channels, Plays One-Twos, Tries Killer Balls Often, Plays No Through Balls, Tries Long Range Passes, Plays Short Simple Passes, Stops Play, Dwells On Ball, Looks For Pass Rather Than Shooting, Dictates Tempo, Likes To Switch Ball To Other Flank, Likes Ball Played Into Feet, Shoots From Distance, Refrains From Taking Long Shots, Tries To Lob Keeper, Likes To Round Keeper, Shoots With Power, Places Shots, Attempts First Time Shots, Attempts Overhead Kicks, Hits Free Kicks With Power, Tries Long Range Free Kicks, Dives Into Tackles, Does Not Dive Into Tackles, Marks Opponents Tightly, Brings Ball Out Of Defence, Tries To Play Way Out Of Trouble, Tries Tricks, Curls Balls, Uses Outside Of Foot, Likes To Beat Man Repeatedly, Avoids Using Weaker Foot, Develops Weaker Foot, Possesses Long Flat Throw, Uses Long Throws To Start Counter Attacks, Gets Crowd Going, Argues With Officials, Winds Up Opponents"
+
 PROMPT = f"""This is a Football Manager screenshot showing one or more players.
 
 Extract all visible player data and return it as JSON following this exact schema:
@@ -68,36 +69,29 @@ Rules:
 - For outfield players, set "is_goalkeeper" to false and leave "goalkeeping" fields as 0.
 - For goalkeepers, set "is_goalkeeper" to true, set "analysis_mode" to "goalkeeper", and leave "technical" fields as 0.
 - For "foot", use values: "Very Strong", "Strong", "Reasonable", "Weak", "Very Weak", or "" if not visible.
-- For "current_ability" and "potential_ability", use 0.5 increments (e.g. 4.5 stars = 4.5). Gold stars indicate higher tier than silver stars at the same count.
-- For "traits", return a list of strings. Empty list if none visible.
-- For "personality", return the personality label as string. Empty string if not visible.
-- For "positions", return the player's positions as they appear in text on screen (e.g. "Defender (Right)", "Midfielder (Centre)", "Striker"). Do NOT list roles or duties — only the positional labels.
-- For "contract.wage", extract the weekly wage (look for "p/w" or "per week" label). Preserve decimals exactly as shown (e.g. "€5.5K p/w", not "€55K p/w").
-- For "contract.value", extract the market value range (e.g. "€475K - €1M"). This is different from the wage.
-- For all monetary values, preserve decimal points exactly as shown. "5.5k" must never become "55k".
-- If a field is not visible in the screenshot, use 0 for numbers, "" for strings, and [] for lists.
-- Do not invent data. Only extract what is visible.
-- For "nationality", always use the full country name in English (e.g. "Spain", not "ESP" or "España").
-- For "traits", only include traits whose full text is visible on screen. If you see "+N more" or any truncated indicator, do NOT guess the hidden traits — only list what is fully readable.
-- For "current_ability" and "potential_ability", only use values you can clearly distinguish visually. If uncertain between two values (e.g. 3 vs 3.5 stars), prefer the lower value.
-- For "contract.wage", only extract the value explicitly labeled as wage or salary (p/w, per week, p/a). If not visible or labeled "not for sale", use "".
-- For "contract.value", only extract the market value range. If the player is "not for sale" or no value range is shown, use "not for sale" or "".
-- For "contract.expires", the date always includes day/month/year (e.g. "30/06/2043"). Extract the full date as shown. Never use the day or month numbers as part of salary or other financial fields.
-- For "current_ability" and "potential_ability", if the stars are not visible (e.g. player not fully scouted), use null instead of 0 or any other value.
+- For "current_ability" and "potential_ability", use 0.5 increments (e.g. 4.5 stars = 4.5). Gold stars indicate higher tier than silver stars at the same count. If not visible, use null.
+- For "traits", only include traits from this exact list: {TRAITS_LIST}. Do not invent trait names. If a trait is visible but not in this list, ignore it.
+- For "personality", return the personality label as string. Empty string if not visible or "Scouting Required".
 - For "positions", only include positions whose full text is visible on screen. Do NOT guess or complete truncated position names.
-- For "contract.wage" and "contract.value", if the value shown is "Unknown", use "unknown". Never invent or estimate financial values.
-- For any numeric attribute, if the value shown is a range (e.g. "12-16"), store it as a string exactly as shown (e.g. "12-16"). If the value is a dash ("-") or empty, use null. Never invent or estimate attribute values.
-- Attribute values range from 1 to 20 in Football Manager. Use integers for known values, strings for ranges (e.g. "12-16"), and 0 for any attribute that is not visible, is a dash ("-"), or has no data. Never invent or estimate attribute values.
-- For "current_ability" and "potential_ability", use null if not visible or scouting is incomplete.
 - In the top-right area of the screen, the layout is always: first line is transfer value (or "Not for Sale" or "Unknown"), second line is "€[wage] p/w [contract end date]". Never confuse these two lines. The wage always has "p/w" after it. The contract date is always at the end of the second line in format DD/MM/YYYY.
+- For "contract.wage", only extract the value explicitly labeled with p/w. Preserve decimals exactly (e.g. "€5.75K p/w"). If unknown, use "unknown".
+- For "contract.value", only extract the market value. If "Not for Sale" or unknown, use that string.
+- For "contract.expires", extract the full date DD/MM/YYYY. Never use date numbers as salary.
+- For attribute values: use integers for known values (1-20), strings for ranges (e.g. "12-16"), 0 for missing/dash. Never invent values.
+- For "nationality", always use the full country name in English.
+- If a field is not visible, use 0 for numbers, "" for strings, [] for lists, null for ability fields.
+- Do not invent data. Only extract what is visible.
+- For all monetary values, preserve decimal points exactly as shown (e.g. "5.75k" must never become "575k").
+- For "contract.wage" and "contract.value", if the value shown is "Unknown", use "unknown".
 """
 
 
 def extract_players_from_screenshot(image_bytes: bytes) -> str:
     image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
 
-    response = client.chat.completions.create(
+    response = completion(
         model=VISION_MODEL,
+        api_key=VISION_API_KEY,
         messages=[
             {
                 "role": "user",
