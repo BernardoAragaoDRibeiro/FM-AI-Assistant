@@ -200,6 +200,27 @@ export default function Settings() {
         onChange={handleChange}
       />
 
+      <div className="bg-[#1a1f2e] border border-[#2d3448] rounded-lg p-6 space-y-4">
+        <h2 className="text-sm font-semibold">Analysis Settings</h2>
+        <div>
+          <label className="block text-xs text-[#7b82a0] mb-1">
+            Max output tokens
+          </label>
+          <input
+              type="number"
+              value={config.analysis_max_tokens || 1000}
+              onChange={(e) => handleChange("analysis_max_tokens", Number(e.target.value))}
+              min={256}
+              max={8192}
+              step={256}
+              className="w-32 bg-[#232938] border border-[#2d3448] rounded px-2 py-1.5 text-xs focus:outline-none focus:border-[#00b894]"
+          />
+          <p className="text-xs text-[#7b82a0] mt-1">
+            Groq free tier: 1000 · Gemini Flash: 8192 · Local models: unlimited
+          </p>
+        </div>
+      </div>
+
       <div className="flex items-center gap-4">
         <button
           onClick={handleSave}

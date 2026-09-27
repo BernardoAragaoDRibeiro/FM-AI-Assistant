@@ -9,6 +9,7 @@ CONFIG_DEFAULTS = {
     "vision_api_key": "",
     "analysis_model": "groq/qwen/qwen3.8-27b",
     "analysis_api_key": "",
+    "analysis_max_tokens": 1000,
 }
 
 
