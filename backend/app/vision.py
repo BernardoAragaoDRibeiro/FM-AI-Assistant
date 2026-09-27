@@ -68,8 +68,8 @@ Extract all visible player data and return it as JSON following this exact schem
 Rules:
 - Return ONLY the JSON, no extra text, no markdown, no backticks.
 - For outfield players, set "is_goalkeeper" to false and leave "goalkeeping" fields as 0.
-- For goalkeepers, set "is_goalkeeper" to true, set "analysis_mode" to "goalkeeper", and leave "technical" fields as 0.
-- For "foot", use values: "Very Strong", "Strong", "Reasonable", "Weak", "Very Weak", or "" if not visible.
+- For goalkeepers, set "is_goalkeeper" to true, set "analysis_mode" to "goalkeeper", and leave "technical" fields as 0 EXCEPT "first_touch" and "passing" which are relevant for goalkeepers and should be extracted if visible.
+- For "foot", use values: "Very Strong", "Strong", "Fairly Strong", "Reasonable", "Weak", "Very Weak", or "" if not visible.
 - For "current_ability" and "potential_ability", use 0.5 increments (e.g. 4.5 stars = 4.5). Gold stars indicate higher tier than silver stars at the same count. If not visible, use null.
 - For "traits", only include traits from this exact list: {TRAITS_LIST}. Do not invent trait names. If a trait is visible but not in this list, ignore it.
 - For "personality", return the personality label as string. Empty string if not visible or "Scouting Required".
